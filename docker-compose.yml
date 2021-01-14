@@ -1,0 +1,44 @@
+version: "3"
+
+networks:
+  # Network for backend and database to communicate with each other
+  kapschdemo_default:
+    driver: bridge
+
+services:
+  kapschdemo-persistence:
+    image: postgres
+    volumes:
+      - /kapschdemo/backend/data/kapschdemo-db
+    networks:
+      - kapschdemo_default
+    environment:
+      - POSTGRES_PASSWORD=kapschdemo
+    ports:
+      # Database is available on 5435 on the host machine,
+      # but still available on 5432 for other containers
+      # since they use the docker network
+      - 5435:5432
+  kapschdemo-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    volumes:
+      - ./backend:/kapschdemo/backend
+    networks:
+      - kapschdemo_default
+    depends_on:
+      - kapschdemo-persistence
+  kapschdemo-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      # Angular Live Development Server
+      - 4200:4200
+      # Cordova Browser Server
+      - 8000:8000
+    volumes:
+      - ./frontend:/kapschdemo/frontend
